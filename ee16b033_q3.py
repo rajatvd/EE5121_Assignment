@@ -1,5 +1,4 @@
-"""Run this script to solve q31."""
-import argparse
+"""Run this script to solve q3."""
 import matplotlib.pyplot as plt
 import numpy as np
 import cvxpy as cp
@@ -23,7 +22,7 @@ def solve(X):
         Completed matrix.
 
     """
-
+    # %%
     m, n = X.shape
     Xv = cp.Variable((m, n))
     Y = cp.Variable((m, m))
@@ -45,8 +44,9 @@ def solve(X):
     ]
 
     prob = cp.Problem(cp.Minimize(obj), constraints)
-    prob.solve(solver='CVXOPT')
-    Xv.value
+    # %%
+    prob.solve(solver='SCS', verbose=True)
+    return Xv.value
 
 
 # %%
@@ -55,4 +55,12 @@ if __name__ == '__main__':
     # load data
     mat = scipy.io.loadmat('Ratings.mat')
     X = mat['X']
+
+    Xc = solve(X)
+    print(f"Rank of completed matrix = {np.linalg.matrix_rank(Xc)}")
+
     plt.imshow(X)
+    plt.figure()
+    plt.imshow(Xc)
+    plt.figure()
+    plt.imshow(Xc - X)
