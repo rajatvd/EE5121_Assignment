@@ -7,13 +7,10 @@ import scipy.io
 
 
 # %%
-def solve(y, rho=0.2, re_eps=0.01, re_iters=1):
+def solve(y, rho=0.2):
     """Solve question 1 (total variation minimization).
 
-    Uses reweighted-l1 minimization approach to enhance sparsity.
-
-    Ref:
-
+    Uses the SOCP approach formulated in the report.
 
     Parameters
     ----------
@@ -21,12 +18,6 @@ def solve(y, rho=0.2, re_eps=0.01, re_iters=1):
         Input data.
     rho : float
         Weight given to l1 norm of TV (the default is 0.2).
-    re_eps : float
-        Value of epsilon used in reweighted l1 (the default is 0.01).
-    re_iters : int
-        Number of reweighting iterations (the default is 1).
-        Note that setting this to 1 reduces to normal l1 minimization.
-        (This can be used conveniently for comparing the two methods)
 
     Returns
     -------
@@ -36,34 +27,38 @@ def solve(y, rho=0.2, re_eps=0.01, re_iters=1):
     """
     n = y.shape[0]
 
-    # initialize weights
-    w = np.ones(n - 1)
-    w = w.reshape(-1, 1)
-
     # create TV matrix (called A in the report)
     diff1 = np.zeros((n - 1, n))
     diff1[:, 1:] = np.eye(n - 1)
     diff1[:, :-1] -= np.eye(n - 1)
 
-    for i in range(re_iters):
+    # create x variable - the reconstruction
+    x = cp.Variable((n, 1))
+    error = cp.pnorm(x - y, 2)  # l2 error
+    tv = diff1 @ x  # find the first difference
 
-        x = cp.Variable((n, 1))  # reconstruction variable
-        error = cp.pnorm(x - y, 2)  # l2 loss
-        v = diff1 @ x  # first difference vector
+    # auxiliary variables for SOCP formulation
+    t = cp.Variable((1, 1))
+    u = cp.Variable((n - 1, 1))
 
-        # weighted l1 norm (or weighted tv)
-        tv = cp.pnorm(cp.multiply(w, v), 1)
+    # second order cone constraint for l2 error
+    constraints = [error <= t]
 
-        # unconstrained objective which is weighted sum of error and tv norm
-        obj = error + rho * tv
-        prob = cp.Problem(cp.Minimize(obj))
+    # 2*(n-1) linear constraints for l1 norm
+    l1_constraints1 = [tv[i] <= u[i] for i in range(n - 1)]
+    l1_constraints2 = [-u[i] <= tv[i] for i in range(n - 1)]
 
-        # solve weighted problem
-        prob.solve(verbose=True)
+    constraints.extend(l1_constraints1)
+    constraints.extend(l1_constraints2)
 
-        # update weights
-        w = 1 / (np.abs(v.value) + re_eps)
+    # objective function in epigraph form
+    obj = t + cp.sum(u)
 
+    # solve the problem
+    prob = cp.Problem(cp.Minimize(obj), constraints)
+    prob.solve(verbose=True)
+
+    # return reconstructed signal value
     return x.value
 
 
@@ -100,12 +95,6 @@ if __name__ == '__main__':
     parser.add_argument('--rho', nargs='?', default=0.2, type=float,
                         help='weight given to reweighted l1 norm')
 
-    parser.add_argument('--re_eps', nargs='?', default=0.01, type=float,
-                        help='epsilon in reweighted l1 norm')
-
-    parser.add_argument('--re_iters', nargs='?', default=1, type=int,
-                        help='number of reweighted l1 iterations')
-
     v = parser.parse_args()
     print(v)
 
@@ -114,23 +103,24 @@ if __name__ == '__main__':
     y = mat['y']
 
     # reconstruct signal
-    x_hat = solve(y, v.rho, v.re_eps, v.re_iters)
+    x_hat = solve(y, v.rho)
 
-    # output stuff and plots
+    # output error
     e = np.linalg.norm(y - x_hat)
     print(f"Optimal value of error e = {e}")
 
+    # number of jumps
     js = jumps(x_hat)
     print(f"Number of jumps = {js}")
 
-    s = f"$\\epsilon = {v.re_eps}$\n"
-    s += f"iters $ = {v.re_iters}$\n"
-    s += f"Optimal value of error $e = {e:.4f}$\n"
+    s = f"Optimal value of error $e = {e:.4f}$\n"
     s += f"Number of jumps $ = {js}$\n"
 
+    # plot stuff
     plt.rcParams['font.size'] = 15
     plt.figure(figsize=(9, 9))
-    plt.title(f"Total variation reconstruction with $\\rho = {v.rho:.5f}$")
+    plt.title(
+        f"Total variation reconstruction with $\\rho = {v.rho:.5f}$ (SOCP)")
     plt.plot(y, '-', alpha=0.5)
     plt.plot(x_hat)
     plt.grid()
