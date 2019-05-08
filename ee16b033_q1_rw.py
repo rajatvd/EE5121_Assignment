@@ -12,8 +12,10 @@ def solve(y, rho=0.2, re_eps=0.01, re_iters=1):
 
     Uses reweighted-l1 minimization approach to enhance sparsity.
 
-    Ref:
-
+    Reference:
+    Emmanuel J Candes, Michael B Wakin, and Stephen P Boyd. Enhancing sparsity
+    by reweighted l1 minimization. Journal of Fourier analysis and applications
+    14(5-6):877–905, 2008.
 
     Parameters
     ----------
