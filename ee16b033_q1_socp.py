@@ -45,8 +45,8 @@ def solve(y, rho=0.2):
     constraints = [error <= t]
 
     # 2*(n-1) linear constraints for l1 norm
-    l1_constraints1 = [tv[i] <= u[i] for i in range(n - 1)]
-    l1_constraints2 = [-u[i] <= tv[i] for i in range(n - 1)]
+    l1_constraints1 = [rho * tv[i] <= u[i] for i in range(n - 1)]
+    l1_constraints2 = [-u[i] <= rho * tv[i] for i in range(n - 1)]
 
     constraints.extend(l1_constraints1)
     constraints.extend(l1_constraints2)
