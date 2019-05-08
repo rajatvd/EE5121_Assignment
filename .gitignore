@@ -1,2 +1,5 @@
 scratch.py
 .ipynb_checkpoints
+plots
+__pycache__
+gifs
