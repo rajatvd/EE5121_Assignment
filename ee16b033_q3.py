@@ -59,8 +59,14 @@ if __name__ == '__main__':
     Xc = solve(X)
     print(f"Rank of completed matrix = {np.linalg.matrix_rank(Xc)}")
 
+    plt.figure(figsize=(5, 6))
     plt.imshow(X)
-    plt.figure()
+    plt.show()
+
+    plt.figure(figsize=(5, 6))
     plt.imshow(Xc)
-    plt.figure()
+    plt.show()
+
+    plt.figure(figsize=(5, 6))
     plt.imshow(Xc - X)
+    plt.show()
