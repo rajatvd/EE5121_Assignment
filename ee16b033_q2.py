@@ -20,7 +20,7 @@ def solve(A, c_max, p, p_disc, q):
     # epigraph linear objective
     obj = cp.sum(t)
 
-    # affine resource constraint
+    # affine resource constraint and non-negative activity constraint
     constraints = [A @ x <= c_max, x >= 0]
 
     # splitting max function into two affine constraints (epigraph form)
