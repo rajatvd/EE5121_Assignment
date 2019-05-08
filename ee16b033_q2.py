@@ -21,7 +21,7 @@ def solve(A, c_max, p, p_disc, q):
     obj = cp.sum(t)
 
     # affine resource constraint
-    constraints = [A @ x <= c_max]
+    constraints = [A @ x <= c_max, x >= 0]
 
     # splitting max function into two affine constraints (epigraph form)
     c1 = [-p[j] * x[j] <= t[j] for j in range(n)]
@@ -32,7 +32,7 @@ def solve(A, c_max, p, p_disc, q):
 
     prob = cp.Problem(cp.Minimize(obj), constraints)
 
-    prob.solve(verbose=True)
+    prob.solve(verbose=True, solver='ECOS')
     # print(t.value)
     # print(np.max(np.array([-p*x.value, -p*q -p_disc*(x.value-q)]), axis=0))
     return x.value, -t.value
