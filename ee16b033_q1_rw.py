@@ -30,9 +30,19 @@ def solve(y, rho=0.2, re_eps=0.01, re_iters=1):
 
     return x.value
 
+
 # %%
+def jumps(x, thresh=1e-4):
+    n = x.shape[0]
+    diff1 = np.zeros((n - 1, n))
+    diff1[:, 1:] = np.eye(n - 1)
+    diff1[:, :-1] -= np.eye(n - 1)
+
+    tv = diff1 @ x
+    return len(np.where(abs(tv) > thresh)[0])
 
 
+# %%
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -52,6 +62,17 @@ if __name__ == '__main__':
     y = mat['y']
     x_hat = solve(y, v.rho, v.re_eps, v.re_iters)
 
+    e = np.linalg.norm(y - x_hat)
+    print(f"Optimal value of error e = {e}")
+
+    js = jumps(x_hat)
+    print(f"Number of jumps = {js}")
+
+    s = f"$\\epsilon = {v.re_eps}$\n"
+    s += f"iters $ = {v.re_iters}$\n"
+    s += f"Optimal value of error $e = {e:.4f}$\n"
+    s += f"Number of jumps $ = {js}$\n"
+
     plt.rcParams['font.size'] = 15
     plt.figure(figsize=(9, 9))
     plt.title(f"Total variation reconstruction with $\\rho = {v.rho:.5f}$")
@@ -59,5 +80,5 @@ if __name__ == '__main__':
     plt.plot(x_hat)
     plt.grid()
     plt.legend([r"$y$", r"$\hat x$"])
-    plt.text(1, 4, f"$\\epsilon = {v.re_eps}$ \niters $ = {v.re_iters}$")
+    plt.text(1, 3, s)
     plt.show()
